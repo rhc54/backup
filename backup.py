@@ -9,6 +9,41 @@ def signal_handler(signal, frame):
     print("Ctrl-C received")
     sys.exit(0)
 
+def checkmatch(src:str, pattern:str):
+    if src == pattern:
+        return True
+
+    if '*' not in pattern:
+        return False
+
+    # wildcard in pattern
+    slen = len(src)
+    plen = len(pattern)
+
+    # if the wildcard is at the front, then check just the end
+    if pattern[0] == '*':
+        for n in range(plen-1):
+            if n > slen:
+                return False
+            if src[slen-n-1] != pattern[plen-n-1]:
+                return False
+        # got to the end with all matching
+        return True
+
+    # if wildcard is at the end, check the front
+    if pattern[plen-1] == '*':
+        for n in range(plen-1):
+            if n > slen:
+                return False
+            if src[n] != pattern[n]:
+                return False
+        # all checked and matching
+        return True
+
+    # wildcard in middle somewhere - we don't handle it yet
+    return False
+
+
 def backupDir(p:dict):
     sourcepath = p["source"]
     comppath = p["target"]
@@ -34,13 +69,24 @@ def backupDir(p:dict):
             pass
 
         elif (os.path.isdir(source)):
-            # check if this directory is on the exclude list
+            # if there is an exclude directory list, check it
             doprocess = True
-            if "exclude" in p:
-                for e in p["exclude"]:
-                    if e == source:
+            if "excludedir" in p:
+                for e in p["excludedir"]:
+                    if checkmatch(source, e):
                         doprocess = False
                         break
+            elif "includedir" in p:
+                # if there is an include directory list, check it - note
+                # that there cannot be both an exclude AND an
+                # include list, and we checked for that conflict
+                # when constructing this work plan
+                doprocess = False
+                for e in p["includedir"]:
+                    if checkmatch(source, e):
+                        doprocess = True
+                        break
+
             if doprocess:
                 newP = p
                 newP["source"] = source
@@ -59,49 +105,28 @@ def backupDir(p:dict):
         else:
             # this is a file - see if it is on the exclude list
             doprocess = True
-            if "exclude" in p:
-                for e in p["exclude"]:
-                    if e == source:
+            if "excludefile" in p:
+                for e in p["excludefile"]:
+                    if checkmatch(d, e):
                         doprocess = False
                         break
-                    # does this exclude have a wildcard?
-                    if '*' in e:
-                        elen = len(e)
-                        dlen = len(d)
-                        # if the wildcard is at the front, then check just the end
-                        if e[0] == '*':
-                            match = True
-                            for n in range(elen-1):
-                                if n > dlen:
-                                    match = False
-                                    break
-                                if e[elen-n-1] != d[dlen-n-1]:
-                                    match = False
-                                    break
-                            if match:
-                                doprocess = False
-                                break
-                        # if wildcard is at the end, check the front
-                        elif e[elen-1] == '*':
-                            match = True
-                            for n in range(elen-1):
-                                if n > dlen:
-                                    match = False
-                                    break
-                                if e[n] != d[n]:
-                                    match = False
-                                    break
-                            if match:
-                                doprocess = False
-                                break
-            if not doprocess:
-                msg = "Source " + source + " is excluded - ignoring"
-                p["log"].info(msg)
-                continue
+                if not doprocess:
+                    msg = "Source " + source + " is excluded - ignoring"
+                    p["log"].info(msg)
+                    continue
 
             # if we were given explicit include directions, check
             # to see if this one fits
-
+            elif "includefile" in p:
+                doprocess = False
+                for e in p["includefile"]:
+                    if checkmatch(d, e):
+                        doprocess = True
+                        break
+                if not doprocess:
+                    msg = "Source " + source + " is not included - ignoring"
+                    p["log"].info(msg)
+                    continue
 
             # we want to consider this file
             comp = os.path.join(comppath, d)
@@ -246,12 +271,6 @@ def process_option(config, opt):
             if tgt == "false":
                 config["allext"] = False
             return True
-        if cmd == "exclude":
-            if not config["exclude"]:
-                config["exclude"] = tgt.split(',')
-            else:
-                config["exclude"] += tgt.split(',')
-            return True
         if cmd == "log":
             config["logFile"] = tgt
             return True
@@ -273,7 +292,22 @@ def process_option(config, opt):
     print("unrecognized option", opt)
     return False
 
+validOptions = ["source", "target", "dest", "dryrun", "debug",
+                "title", "excludedir", "includedir", "excludefile",
+                "includefile", "noupdate", "noallext", "logFile"]
+
 def validate(config):
+    # check for invalid options
+    for e in config:
+        found = False
+        for v in validOptions:
+            if e == v:
+                found = True
+                break
+        if not found:
+            print("Unrecognized option:", e)
+            return False
+
     # must give us a source directory
     if not "source" in config:
         print("You must provide a SOURCE directory")
@@ -352,10 +386,14 @@ def main():
                          help="The head of the directory tree to be compared with the source (defaults to destination directory)")
     execGroup.add_option("--dest", dest="dest",
                          help="The destination directory where the files that are different are to be stored")
-    execGroup.add_option("--exclude", dest="exclude",
-                         help="Comma-delimited list of files and/or directories to be ignored (can include *.ext)")
-    execGroup.add_option("--include", dest="include",
-                         help="Comma-delimited list of files and/or directories to be included (can include *.ext)")
+    execGroup.add_option("--excludedir", dest="excludedir",
+                         help="Comma-delimited list of directories to be ignored (can include wildcard)")
+    execGroup.add_option("--includedir", dest="includedir",
+                         help="Comma-delimited list of directories to be included (can include *.ext)")
+    execGroup.add_option("--excludefile", dest="excludefile",
+                         help="Comma-delimited list of files to be ignored (can include wildcard)")
+    execGroup.add_option("--includefile", dest="includefile",
+                         help="Comma-delimited list of files to be included (can include wildcard - e.g., *.ext)")
     execGroup.add_option("--config", dest="config",
                          help="Comma-delimited list of files containing src/tgt/dest information")
     execGroup.add_option("--noupdate",
@@ -382,8 +420,11 @@ def main():
         if options.config:
             print("Cannot provide both a config file AND specific src or dest options on the cmd line")
             sys.exit(1)
-        if options.include and options.exclude:
-            print("Cannot provide both include AND exclude options")
+        if options.includedir and options.excludedir:
+            print("Cannot provide both include AND exclude directory options")
+            sys.exit(1)
+        if options.includefile and options.excludefile:
+            print("Cannot provide both include AND exclude file options")
             sys.exit(1)
         # assemble the request
         config = {}
@@ -404,10 +445,14 @@ def main():
             config["noupdate"] = True
         if not options.allext:
             config["allext"] = False
-        if options.exclude:
-            config["exclude"] = options.exclude.split(',')
-        if options.include:
-            config["include"] = options.include.split(',')
+        if options.excludedir:
+            config["excludedir"] = options.excludedir.split(',')
+        if options.includedir:
+            config["includedir"] = options.includedir.split(',')
+        if options.excludefile:
+            config["excludefile"] = options.excludefile.split(',')
+        if options.includefile:
+            config["includefile"] = options.includefile.split(',')
         # validate the input
         if not validate(config):
             sys.exit(1)
@@ -440,7 +485,7 @@ def main():
                 if 0 == len(inputdata):
                     if bool(config):
                         if doprocess:
-                            doprocess = validate(config):
+                            doprocess = validate(config)
                         if doprocess:
                             process.append(config)
                         else:
@@ -460,12 +505,30 @@ def main():
                 # add to the current dictionary
                 if cmd.lower() == "option":
                     doprocess = process_option(config, tgt)
-                elif cmd.lower() == "exclude":
+                elif cmd.lower() == "excludedir":
                     tmp = tgt.split(',')
-                    if not "exclude" in config:
-                        config["exclude"] = tmp
+                    if not "excludedir" in config:
+                        config["excludedir"] = tmp
                     else:
-                        config["exclude"] += tmp
+                        config["excludedir"] += tmp
+                elif cmd.lower() == "includedir":
+                    tmp = tgt.split(',')
+                    if not "includedir" in config:
+                        config["includedir"] = tmp
+                    else:
+                        config["includedir"] += tmp
+                elif cmd.lower() == "excludefile":
+                    tmp = tgt.split(',')
+                    if not "excludefile" in config:
+                        config["excludefile"] = tmp
+                    else:
+                        config["excludefile"] += tmp
+                elif cmd.lower() == "includefile":
+                    tmp = tgt.split(',')
+                    if not "includefile" in config:
+                        config["includefile"] = tmp
+                    else:
+                        config["includefile"] += tmp
                 else:
                     config[cmd.lower()] = tgt
             if bool(config):
@@ -483,7 +546,6 @@ def main():
                 p["log"].debug(tmp)
             else:
                 print("Processing:", p["title"])
-        print(p)
         backupDir(p)
 
 if __name__ == '__main__':

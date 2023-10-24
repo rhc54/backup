@@ -1,0 +1,4 @@
+TITLE: Desktop
+SOURCE: /Users/rhc/Desktop
+TARGET: /Volumes/homes/rhc/Backup/Desktop
+DEST:   /Volumes/homes/rhc/Backup/Desktop

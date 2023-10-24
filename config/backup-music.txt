@@ -1,0 +1,7 @@
+TITLE: Music
+SOURCE: /Users/rhc/Music/iTunes/iTunes Media/Music
+TARGET: /Volumes/homes/Music (iTunes)
+DEST: /Volumes/homes/Music (iTunes)
+EXCLUDE: *.wav
+OPTION: noupdate=true
+OPTION: allext = false
