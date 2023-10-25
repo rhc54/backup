@@ -2,3 +2,4 @@ TITLE: Mail
 SOURCE: /Users/rhc/Library/Mail
 TARGET: /Volumes/homes/rhc/Backup/Mail
 DEST:   /Volumes/homes/rhc/Backup/Mail
+OPTION: log=mail.txt
