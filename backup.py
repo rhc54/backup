@@ -176,7 +176,7 @@ def backupDir(p:dict):
 
                 except (IOError, OSError) as err:
                     msg = "Error backing up: " + source + " Error: " + err
-                    p["log"].error(msg)
+                    p["log"].debug(msg)
                     pass
 
                 except:
@@ -248,7 +248,7 @@ def backupDir(p:dict):
 
                 except (IOError, OSError) as err:
                     msg = "Error backing up: " + source + " Error: " + err
-                    p["log"].error(msg)
+                    p["log"].debug(msg)
                     pass
 
                 except:
