@@ -175,12 +175,12 @@ def backupDir(p:dict):
                     pass
 
                 except (IOError, OSError) as err:
-                    msg = "Error backing up: " + source + " Error: " + err
+                    msg = "Error backing up: " + source + " Error: " + str(err)
                     p["log"].debug(msg)
                     pass
 
-                except:
-                    msg = "Unrecognized error: " + source + " Error: " + err
+                except as err:
+                    msg = "Unrecognized error: " + source
                     p["log"].error(msg)
                     pass
 
@@ -247,7 +247,7 @@ def backupDir(p:dict):
                     pass
 
                 except (IOError, OSError) as err:
-                    msg = "Error backing up: " + source + " Error: " + err
+                    msg = "Error backing up: " + source + " Error: " + str(err)
                     p["log"].debug(msg)
                     pass
 
