@@ -179,7 +179,7 @@ def backupDir(p:dict):
                     p["log"].debug(msg)
                     pass
 
-                except as err:
+                except:
                     msg = "Unrecognized error: " + source
                     p["log"].error(msg)
                     pass
