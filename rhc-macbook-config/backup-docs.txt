@@ -1,0 +1,4 @@
+TITLE: LaptopDocuments
+SOURCE: /Users/rhc/Documents
+TARGET: /Volumes/homes/rhc/LaptopBackup/Documents
+DEST:   /Volumes/homes/rhc/LaptopBackup/Documents

@@ -1,0 +1,5 @@
+TITLE: LaptopMail
+SOURCE: /Users/rhc/Library/Mail
+TARGET: /Volumes/homes/rhc/LaptopBackup/Mail
+DEST:   /Volumes/homes/rhc/LaptopBackup/Mail
+OPTION: log=mail.txt
