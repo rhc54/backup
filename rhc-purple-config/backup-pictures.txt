@@ -1,0 +1,5 @@
+TITLE: Pictures
+SOURCE: /Users/rhc/Pictures
+TARGET: /Volumes/homes/rhc/Backup/Pictures
+DEST: /Volumes/homes/rhc/Backup/Pictures
+OPTION: noupdate=false

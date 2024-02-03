@@ -1,0 +1,7 @@
+TITLE: WAV and MP3 files
+SOURCE: /Users/rhc/Music/iTunes/iTunes Media/Music
+TARGET: /Volumes/homes/Music (SRC)
+DEST: /Volumes/homes/Music (SRC)
+EXCLUDEFILE: *.m4a
+OPTION: noupdate=true
+OPTION: log=foo.txt
